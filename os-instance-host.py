@@ -19,6 +19,7 @@ args = cli.parse_args()
 conn = openstack.connection.from_config()
 network = conn.network.find_network(args.network)
 
+print('INSTANCE HOST')
 for port in conn.network.ports(network_id=network.id):
     portinfo = PortInfo()
     if port.device_id != '':
@@ -29,4 +30,6 @@ for port in conn.network.ports(network_id=network.id):
         if instance is not None:
             portinfo.instance_name = instance.name
             portinfo.compute_host = instance.compute_host
-    print(portinfo)
+    
+    if portinfo.compute_host:
+        print(portinfo.instance_name, portinfo.compute_host)
