@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-import argparse, openstack, pprint, collections
+import argparse, pprint
+from tabulate import tabulate
+import openstack
 
 cli = argparse.ArgumentParser(description='Show instance hosts')
 cli.add_argument('network')
-cli.add_argument('-n', '--name')
+cli.add_argument('-n', '--name', help='filter output to instances with names containing NAME')
 
 class PortInfo:
     FIELDS = ('device_id', 'port_name', 'instance_name', 'compute_host')
@@ -21,8 +23,7 @@ if __name__ == '__main__':
     network = conn.network.find_network(args.network)
 
 hosts = {}
-if args.name is not None:
-    print('INSTANCE HOST')
+ports = []
 for port in conn.network.ports(network_id=network.id):
     portinfo = PortInfo()
     if port.device_id != '':
@@ -36,9 +37,10 @@ for port in conn.network.ports(network_id=network.id):
             if portinfo.compute_host not in hosts:
                 hosts[portinfo.compute_host] = []
             hosts[portinfo.compute_host].append(portinfo.instance_name)
-            if args.name is not None and args.name in portinfo.instance_name:
-                print(portinfo.instance_name, portinfo.compute_host)
+            ports.append(portinfo)
 
-# output by-hosts:
-if args.name is None:
+if args.name is None: # output by-hosts:
     pprint.pprint(hosts)
+else: # output by name:
+    instance_info = [(p.instance_name, p.compute_host) for p in ports if args.name in p.instance_name]
+    print(tabulate(instance_info, headers=('INSTANCE', 'HOST')))
